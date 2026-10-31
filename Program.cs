@@ -1,26 +1,25 @@
-
-using Microsoft.EntityFrameworkCore;
-using StudentManagementAPI.Data;
+using Scalar.AspNetCore;
+using WebApiPractice.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register database connection
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+// Add services to the container.
 
-// Add services
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
+builder.Services.AddSingleton<IStudentService, StudentService>();
+
 
 var app = builder.Build();
 
-// Configure middleware
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
