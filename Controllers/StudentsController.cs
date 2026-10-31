@@ -1,81 +1,81 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudentManagementAPI.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using StudentManagementAPI.Models;
+using WebApiPractice.DTOs;
+using WebApiPractice.Models;
+using WebApiPractice.Services;
 
-namespace WebAPI_Practice.Controllers
+namespace WebApiPractice.Controllers;
+
+[ApiController]
+[Route("api/students")]
+public class StudentController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class StudentsController : ControllerBase
+    private readonly StudentService _studentService;
+
+    public StudentController(StudentService studentService)
     {
-        private readonly AppDbContext _context;
+        _studentService = studentService;
+    }
 
-        // Constructor
-        public StudentsController(AppDbContext context)
+    // GET: api/students
+    [HttpGet]
+    public ActionResult<List<Student>> GetAllStudents()
+    {
+        return Ok(_studentService.GetAllStudents());
+    }
+
+    // GET: api/students/1
+    [HttpGet("{id}")]
+    public ActionResult<Student> GetStudentById(int id)
+    {
+        var student = _studentService.GetStudentById(id);
+
+        if (student == null)
+            return NotFound(new { message = "Student not found." });
+
+        return Ok(student);
+    }
+
+    // POST: api/students
+    [HttpPost]
+    public ActionResult<Student> AddStudent(CreateStudentDto studentDto)
+    {
+        var student = new Student
         {
-            _context = context;
-        }
+            Name = studentDto.Name,
+            Email = studentDto.Email,
+            Age = studentDto.Age
+        };
 
-        // GET: api/students
-        [HttpGet]
-        public async Task<IActionResult> GetAllStudents()
-        {
-            var students = await _context.Students.ToListAsync();
-            return Ok(students);
-        }
+        var createdStudent = _studentService.AddStudent(student);
 
-        // GET: api/students/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetStudentById(int id)
-        {
-            var student = await _context.Students.FindAsync(id);
+        return CreatedAtAction(
+            nameof(GetStudentById),
+            new { id = createdStudent.Id },
+            createdStudent);
+    }
 
-            if (student == null)
-            {
-                return NotFound();
-            }
+    // PUT: api/students/1
+    [HttpPut("{id}")]
+    public ActionResult<Student> UpdateStudent(int id, Student updatedStudent)
+    {
+        var student = _studentService.UpdateStudent(id, updatedStudent);
 
-            return Ok(student);
-        }
+        if (student == null)
+            return NotFound(new { message = "Student not found." });
 
-        // POST: api/students
-        [HttpPost]
-        public async Task<IActionResult> AddStudent([FromBody] Student student)
-        {
-            await _context.Students.AddAsync(student);
-            await _context.SaveChangesAsync();
+        return Ok(student);
+    }
 
-            return CreatedAtAction(
-                nameof(GetStudentById),
-                new { id = student.Id },
-                student
-            );
-        }
+    // DELETE: api/students/1
+    [HttpDelete("{id}")]
+    public IActionResult DeleteStudent(int id)
+    {
+        var deleted = _studentService.DeleteStudent(id);
 
-        // PUT: api/students/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateStudent(
-            int id,
-            [FromBody] Student student)
-        {
-            var existingStudent = await _context.Students.FindAsync(id);
+        if (!deleted)
+            return NotFound(new { message = "Student not found." });
 
-            if (existingStudent == null)
-            {
-                return NotFound();
-            }
-
-            existingStudent.Name = student.Name;
-            existingStudent.Email = student.Email;
-            existingStudent.Age = student.Age;
-            existingStudent.Department = student.Department;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(existingStudent);
-        }
+        return NoContent();
     }
 }
-
